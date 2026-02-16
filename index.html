@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DefiDaiDao | Official Panel</title>
+    <style>
+        :root {
+            --binance-yellow: #F3BA2F;
+            --bg-dark: #0B0E11;
+            --card-bg: #1E2329;
+            --text-main: #EAECEF;
+            --text-dim: #848E9C;
+            --border: #474D57;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #particleContainer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--binance-yellow);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) scale(0); opacity: 0; }
+            50% { opacity: 0.7; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: 28px;
+            width: 95%;
+            max-width: 440px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            border: 1px solid var(--border);
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--binance-yellow);
+            margin: 0;
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .balance-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .balance-card { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; border: 1px solid var(--border); }
+        .bal-label { font-size: 0.65rem; color: var(--text-dim); display: block; }
+        .bal-value { font-size: 1rem; font-weight: bold; color: #fff; }
+
+        .btn {
+            width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: 800; cursor: pointer;
+            transition: 0.3s; font-size: 1.2rem;
+            margin-bottom: 15px; display: flex; justify-content: center; align-items: center;
+        }
+
+        #connectBtn { background: var(--binance-yellow); color: #000; }
+        
+        .section-title {
+            font-size: 1.4rem;
+            color: #fff;
+            margin: 20px 0 15px 0;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .action-btn { background: var(--binance-yellow); color: #000; display: none; }
+        .action-btn:disabled { background: #474D57; color: var(--text-dim); cursor: not-allowed; display: flex; }
+
+        .input-wrapper { background: #0B0E11; border: 2px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 1rem; text-align: center; }
+
+        .dashboard-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; display: none; }
+        .dash-btn { 
+            background: transparent; color: #fff; border: 1px solid var(--border); 
+            font-size: 1rem; padding: 14px; font-weight: 600;
+        }
+        .dash-btn:hover { border-color: var(--binance-yellow); color: var(--binance-yellow); }
+
+        #infoBox { background: rgba(0,0,0,0.4); border-radius: 18px; padding: 20px; margin-top: 20px; display: none; text-align: left; }
+        .stat-line { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 10px; border-bottom: 1px solid #2B3139; padding-bottom: 8px; }
+        .stat-label { color: var(--text-dim); }
+        .stat-val { color: var(--binance-yellow); font-weight: bold; }
+
+        #status { font-size: 0.75rem; color: var(--text-dim); margin-top: 20px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div id="particleContainer"></div>
+
+<div class="container">
+    <h1>DefiDaiDao</h1>
+    <div class="subtitle">Smart Community</div>
+
+    <div class="balance-cards">
+        <div class="balance-card"><span class="bal-label">BNB BALANCE</span><span class="bal-value" id="bnbBal">0.000</span></div>
+        <div class="balance-card"><span class="bal-label">DAI BALANCE</span><span class="bal-value" id="daiBal">0.00</span></div>
+    </div>
+
+    <button id="connectBtn" class="btn">Connect Wallet</button>
+
+    <div id="registrationZone" style="display:none;">
+        <div id="approveStep">
+            <div class="section-title">Step 1: Authorization</div>
+            <button id="approveBtn" class="btn action-btn" disabled>Approve DAI</button>
+        </div>
+
+        <div id="registerStep" style="display:none;">
+            <div class="section-title">Step 2: Registration</div>
+            <div class="input-wrapper">
+                <input type="text" id="uplineInput" placeholder="Sponsor Address (0x...)">
+            </div>
+            <button id="registerBtn" class="btn action-btn" style="display:flex;">Finalize Registration</button>
+        </div>
+    </div>
+
+    <div class="dashboard-btns" id="dashGroup">
+        <button id="rewardBtn" class="btn dash-btn">Claim Reward</button>
+        <button id="infoBtn" class="btn dash-btn">Global Stats</button>
+    </div>
+
+    <div id="infoBox">
+        <div class="stat-line"><span class="stat-label">Member Global ID:</span> <span class="stat-val" id="val-id">-</span></div>
+        <div class="stat-line"><span class="stat-label">All Left Members:</span> <span class="stat-val" id="val-left">0</span></div>
+        <div class="stat-line"><span class="stat-label">All Right Members:</span> <span class="stat-val" id="val-right">0</span></div>
+        <div class="stat-line"><span class="stat-label">Sync Complete:</span> <span class="stat-val" id="val-sync">-</span></div>
+    </div>
+
+    <div id="status">Securely connect your BSC wallet</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script>
+    const CONTRACT_ADDRESS = "0x84a47446f7a563Ce899aE991127b20FB8E20cEca";
+    const DAI_ADDRESS = "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3";
+    const BSC_CHAIN_ID = '0x38';
+
+    let signer, mainContract, tokenContract;
+
+    (function createParticles() {
+        const container = document.getElementById('particleContainer');
+        for (let i = 0; i < 50; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 4 + 1 + 'px';
+            p.style.width = size; p.style.height = size;
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = Math.random() * 8 + 7 + 's';
+            p.style.animationDelay = Math.random() * 10 + 's';
+            container.appendChild(p);
+        }
+    })();
+
+    async function switchNetwork() {
+        try {
+            await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: BSC_CHAIN_ID }] });
+        } catch (err) {
+            if (err.code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: BSC_CHAIN_ID,
+                        chainName: 'Binance Smart Chain',
+                        nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                        rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                        blockExplorerUrls: ['https://bscscan.com/']
+                    }]
+                });
+            }
+        }
+    }
+
+    async function updateBalances(addr, provider) {
+        const bnb = await provider.getBalance(addr);
+        document.getElementById('bnbBal').innerText = parseFloat(ethers.formatEther(bnb)).toFixed(3);
+        const dContract = new ethers.Contract(DAI_ADDRESS, ["function balanceOf(address) view returns (uint256)"], provider);
+        const dai = await dContract.balanceOf(addr);
+        document.getElementById('daiBal').innerText = parseFloat(ethers.formatUnits(dai, 18)).toFixed(2);
+    }
+
+    document.getElementById('connectBtn').onclick = async () => {
+        if (!window.ethereum) return alert("Please install TrustWallet or MetaMask");
+        try {
+            await switchNetwork();
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = await provider.getSigner();
+            const addr = await signer.getAddress();
+            
+            await updateBalances(addr, provider);
+            
+            tokenContract = new ethers.Contract(DAI_ADDRESS, ["function approve(address s, uint256 a) public returns (bool)"], signer);
+            mainContract = new ethers.Contract(CONTRACT_ADDRESS, [
+                "function step_2_become_owner(address _target) external",
+                "function reward() external",
+                "function Owner_Info_Global(address _u) external view returns (uint64 ID, uint32 All_Left, uint32 All_Right, uint32 Save, uint32 Left_Remaining, uint32 Right_Remaining, address UpLine_Address, address Left_Child, address Right_Child, bool Sync_Complete)"
+            ], signer);
+
+            const info = await mainContract.Owner_Info_Global(addr);
+            const isMember = Number(info.ID) > 0;
+
+            document.getElementById('connectBtn').innerText = "WALLET CONNECTED";
+            document.getElementById('connectBtn').style.background = "#2B3139";
+            document.getElementById('connectBtn').style.color = "#F3BA2F";
+            document.getElementById('dashGroup').style.display = "grid";
+
+            if (isMember) {
+                document.getElementById('registrationZone').style.display = "none";
+                document.getElementById('status').innerText = "Active Session: User #" + info.ID;
+            } else {
+                document.getElementById('registrationZone').style.display = "block";
+                document.getElementById('approveBtn').disabled = false;
+                document.getElementById('approveBtn').style.display = "flex";
+                document.getElementById('status').innerText = "Awaiting Action: Step 1";
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    document.getElementById('approveBtn').onclick = async () => {
+        try {
+            const tx = await tokenContract.approve(CONTRACT_ADDRESS, ethers.parseUnits("1", 18));
+            document.getElementById('status').innerText = "Processing Authorization...";
+            await tx.wait();
+            document.getElementById('approveStep').style.display = "none";
+            document.getElementById('registerStep').style.display = "block";
+            document.getElementById('status').innerText = "Authorization Success. Please Register.";
+        } catch (err) { document.getElementById('status').innerText = "Transaction Rejected"; }
+    };
+
+    document.getElementById('registerBtn').onclick = async () => {
+        const upline = document.getElementById('uplineInput').value.trim();
+        if(!ethers.isAddress(upline)) return alert("Invalid Address Format");
+        try {
+            const tx = await mainContract.step_2_become_owner(upline);
+            document.getElementById('status').innerText = "Registering on Blockchain...";
+            await tx.wait();
+            location.reload();
+        } catch (err) { document.getElementById('status').innerText = "Registration Failed"; }
+    };
+
+    document.getElementById('rewardBtn').onclick = async () => {
+        try { 
+            const tx = await mainContract.reward();
+            document.getElementById('status').innerText = "Requesting Payout...";
+            await tx.wait(); 
+            alert("Reward Claimed Successfully!"); 
+        } catch (err) { alert("Execution Failed: Check balance or eligibility"); }
+    };
+
+    document.getElementById('infoBtn').onclick = async () => {
+        const addr = await signer.getAddress();
+        const info = await mainContract.Owner_Info_Global(addr);
+        document.getElementById('infoBox').style.display = "block";
+        document.getElementById('val-id').innerText = info.ID.toString();
+        document.getElementById('val-left').innerText = info.All_Left.toString();
+        document.getElementById('val-right').innerText = info.All_Right.toString();
+        document.getElementById('val-sync').innerText = info.Sync_Complete ? "YES" : "NO";
+        document.getElementById('status').innerText = "Stats Synchronized";
+    };
+</script>
+</body>
+</html>
